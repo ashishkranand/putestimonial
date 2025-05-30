@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PU Alumni Association - Testimonial Maker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fdf6f0, #e8dcd1);
+            color: #333;
+        }
+
+
+        /* Container for the upload form */
+        #uploadPage {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 100px 20px 40px; /* top padding for fixed header */
+            gap: 25px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        #uploadPage h2 {
+            font-size: 2rem;
+            color: #a30000;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            user-select: none;
+            text-shadow: 0 0 5px #a30000;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 1.05rem;
+            align-self: flex-start;
+            margin-left: 5px;
+            color: #5b1b1b;
+        }
+
+        input[type="file"],
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 2px solid #a30000;
+            border-radius: 8px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+            padding: 8px 10px;
+        }
+
+        input[type="file"]:hover,
+        input[type="text"]:hover,
+        textarea:hover,
+        input[type="file"]:focus,
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: #5b0000;
+            box-shadow: 0 0 8px #a30000aa;
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            max-height: 180px;
+        }
+
+        button#generateBtn {
+            width: 100%;
+            padding: 15px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #a30000, #5b0000);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px #a30000cc;
+            transition: background 0.3s ease, transform 0.2s ease;
+            user-select: none;
+        }
+
+        button#generateBtn:hover {
+            background: linear-gradient(90deg, #5b0000, #a30000);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px #5b0000dd;
+        }
+
+        button#generateBtn:active {
+            transform: scale(0.95);
+            box-shadow: 0 3px 10px #5b0000cc;
+        }
+
+        /* Result page styling */
+        #resultPage {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            background-size: cover;
+            background-position: center center;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-right: 5%;
+            padding-left: 5vw;
+            padding-top: 15%;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #testimonialBox {
+            min-width: 35%;
+            max-width: 60%;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 35px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+            font-size: 1.3rem;
+            font-style: italic;
+            font-weight: 500;
+            color: #3b0a0a;
+            backdrop-filter: blur(12px);
+            opacity: 0.95;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+            position: relative;
+            border: 3px solid #a30000;
+        }
+
+        #testimonialBox:hover {
+            transform: scale(1.07);
+            box-shadow: 0 15px 50px rgba(163, 0, 0, 0.7);
+        }
+
+        #testimonialText {
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        #testimonialNameBranch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            font-weight: bold;
+        }
+
+        #testimonialNameBranch .name {
+            color: #a30000;
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+        }
+
+        #testimonialNameBranch .branch {
+            color: #3b0a0a;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.3px;
+        }
+
+        /* Download button styling */
+        #downloadBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: none;
+            background: #a30000;
+            color: white;
+            border-radius: 8px;
+            display: none; /* hidden initially */
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(163, 0, 0, 0.5);
+            transition: background-color 0.3s ease;
+            user-select: none;
+        }
+
+        #downloadBtn:hover {
+            background-color: #690202;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            #uploadPage {
+                max-width: 90vw;
+                padding-top: 110px;
+            }
+
+            #testimonialBox {
+                min-width: 80%;
+                max-width: 90%;
+                font-size: 1.1rem;
+                padding: 25px 20px;
+            }
+
+            
+        }
+    </style>
+
+    <!-- html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body>
+       <div id="uploadPage" aria-label="Upload testimonial form">
+        <h2>Testimonial Maker</h2>
+
+        <label for="nameInput">Name:</label>
+        <input type="text" id="nameInput" placeholder="Your name" autocomplete="name" required aria-required="true" />
+
+        <label for="branchInput">Branch:</label>
+        <input type="text" id="branchInput" placeholder="Your branch" autocomplete="organization" required aria-required="true" />
+
+        <label for="photoInput">Choose Photo:</label>
+        <input type="file" id="photoInput" accept="image/*" required aria-required="true" />
+
+        <label for="testimonialInput">Enter Testimonial:</label>
+        <textarea id="testimonialInput" placeholder="Write your testimonial here..." required aria-required="true"></textarea>
+
+        <button id="generateBtn" aria-label="Generate testimonial image">Generate</button>
+    </div>
+
+    <div id="resultPage" aria-live="polite" aria-label="Generated testimonial result">
+        <div id="testimonialBox" tabindex="0" aria-label="Testimonial content box">
+            <div id="testimonialText"></div>
+            <div id="testimonialNameBranch">
+                <div class="name"></div>
+                <div class="branch"></div>
+            </div>
+        </div>
+        <button id="downloadBtn" aria-label="Download testimonial image">Download Image</button>
+    </div>
+
+    <script>
+        const photoInput = document.getElementById("photoInput");
+        const testimonialInput = document.getElementById("testimonialInput");
+        const generateBtn = document.getElementById("generateBtn");
+        const uploadPage = document.getElementById("uploadPage");
+        const resultPage = document.getElementById("resultPage");
+        const testimonialTextDiv = document.getElementById("testimonialText");
+        const nameDiv = document.querySelector("#testimonialNameBranch .name");
+        const branchDiv = document.querySelector("#testimonialNameBranch .branch");
+
+        const nameInput = document.getElementById("nameInput");
+        const branchInput = document.getElementById("branchInput");
+
+        const downloadBtn = document.getElementById("downloadBtn");
+
+        let photoDataURL = "";
+
+        photoInput.addEventListener("change", function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    photoDataURL = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        generateBtn.addEventListener("click", function () {
+            const testimonialText = testimonialInput.value.trim();
+            const nameText = nameInput.value.trim();
+            const branchText = branchInput.value.trim();
+
+            if (!nameText) {
+                alert("Please enter your name.");
+                nameInput.focus();
+                return;
+            }
+
+            if (!branchText) {
+                alert("Please enter your branch.");
+                branchInput.focus();
+                return;
+            }
+
+            if (!photoInput.files.length) {
+                alert("Please upload a photo.");
+                photoInput.focus();
+                return;
+            }
+
+            if (!testimonialText) {
+                alert("Please enter a testimonial.");
+                testimonialInput.focus();
+                return;
+            }
+
+            if (!photoDataURL) {
+                alert("Photo is still loading. Please wait a moment.");
+                return;
+            }
+
+            // Hide upload page and show result page
+            uploadPage.style.display = "none";
+            resultPage.style.display = "flex";
+
+            // Show download button
+            downloadBtn.style.display = "inline-block";
+
+            // Set background image
+            resultPage.style.backgroundImage = `url('${photoDataURL}')`;
+
+            // Set testimonial text
+            testimonialTextDiv.textContent = testimonialText;
+
+            // Set name and branch separately
+            nameDiv.textContent = nameText;
+            branchDiv.textContent = branchText;
+
+            // Focus testimonial box for accessibility
+            testimonialTextDiv.parentElement.focus();
+        });
+
+        downloadBtn.addEventListener("click", function () {
+            html2canvas(resultPage, { useCORS: true, allowTaint: true }).then(canvas => {
+                const imgData = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.href = imgData;
+                link.download = "testimonial.png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(err => {
+                alert("Oops! Failed to generate image. Try again.");
+                console.error(err);
+            });
+        });
+    </script>
+
+</body>
+
+</html>

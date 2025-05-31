@@ -114,25 +114,26 @@
 
         /* Result page styling */
         #resultPage {
-    display: none;  /* hidden initially */
-    height: 100vh;
-    width: 100vw;
-    position: relative;
-    background-size: cover;
-    background-position: center center;
-    justify-content: flex-end;
-    align-items: center;
-    padding-right: 5%;
-    padding-left: 5vw;
-    padding-top: 15%;
-    overflow: hidden;
-    user-select: none;
-}
+            display: none;
+            /* hidden initially */
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            background-size: cover;
+            background-position: center center;
+            justify-content: flex-end;
+            align-items: center;
+            padding-right: 5%;
+            padding-left: 5vw;
+            padding-top: 15%;
+            overflow: hidden;
+            user-select: none;
+        }
 
-#resultPage.visible {
-    display: flex !important; /* show when visible */
-}
-
+        #resultPage.visible {
+            display: flex !important;
+            /* show when visible */
+        }
 
         #testimonialBox {
             min-width: 35%;
@@ -153,11 +154,19 @@
             align-items: center;
             text-align: center;
 
-            cursor: pointer;
+            cursor: move; /* indicate draggable */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
 
-            position: relative;
+            position: absolute; /* for free moving */
             border: 3px solid #a30000;
+
+            /* Initial position & size */
+            top: 20%;
+            left: 10%;
+            width: 40%;
+            height: auto;
+            resize: both;
+            overflow: auto;
         }
 
         #testimonialBox:hover {
@@ -168,6 +177,7 @@
         #testimonialText {
             margin-bottom: 25px;
             line-height: 1.5;
+            user-select: text;
         }
 
         #testimonialNameBranch {
@@ -176,6 +186,7 @@
             align-items: center;
             gap: 7px;
             font-weight: bold;
+            user-select: text;
         }
 
         #testimonialNameBranch .name {
@@ -332,6 +343,7 @@
         const nameInput = document.getElementById("nameInput");
         const branchInput = document.getElementById("branchInput");
         const logoImg = document.getElementById("logo");
+        const testimonialBox = document.getElementById("testimonialBox");
 
         let photoDataURL = "";
 
@@ -382,23 +394,31 @@
                 return;
             }
 
-            // Set testimonial texts
-            testimonialTextDiv.textContent = `"${testimonialText}"`;
+            // Set background image of resultPage
+            resultPage.style.backgroundImage = `url('${photoDataURL}')`;
+
+            // Set testimonial content
+            testimonialTextDiv.textContent = testimonialText;
             nameDiv.textContent = nameText;
             branchDiv.textContent = branchText;
 
-            // Set background with photo and overlay
-            resultPage.style.backgroundImage = ` url(${photoDataURL})`;
+            // Reset testimonialBox position & size (optional)
+            testimonialBox.style.top = "20%";
+            testimonialBox.style.left = "10%";
+            testimonialBox.style.width = "40%";
+            testimonialBox.style.height = "auto";
 
-            // Show hashtag or hide if empty
+            // Show hashtag text or hide if empty
             if (hashtagText) {
-                hashtagTextDiv.textContent = hashtagText;
+                // Remove leading # if user entered it, because CSS adds #
+                const cleanTag = hashtagText.replace(/^#/, "");
+                hashtagTextDiv.textContent = cleanTag;
                 hashtagTextDiv.style.display = "block";
             } else {
                 hashtagTextDiv.style.display = "none";
             }
 
-            // Show result page, hide upload page by toggling class
+            // Show result page, hide upload page
             uploadPage.style.display = "none";
             resultPage.classList.add("visible");
 
@@ -406,42 +426,147 @@
             downloadBtn.style.display = "inline-block";
         });
 
-        downloadBtn.addEventListener("click", function () {
+        downloadBtn.addEventListener("click", async () => {
+            // Disable button while processing
             downloadBtn.disabled = true;
-            downloadBtn.textContent = "Preparing...";
+            downloadBtn.textContent = "Processing...";
 
-            const clone = resultPage.cloneNode(true);
+            // Temporarily remove button to avoid capturing it
+            downloadBtn.style.display = "none";
 
-            // Remove download button from clone
-            const cloneDownloadBtn = clone.querySelector("#downloadBtn");
-            if (cloneDownloadBtn) clone.removeChild(cloneDownloadBtn);
+            // Temporarily hide logo and hashtag if needed, but here we keep them included
 
-            // Remove logo pointer-events for clean image
-            const cloneLogo = clone.querySelector("#logo");
-            if (cloneLogo) cloneLogo.style.pointerEvents = "none";
-
-            html2canvas(clone, {
-                scale: 2,
+            // Use html2canvas to capture the resultPage content
+            const canvas = await html2canvas(resultPage, {
+                allowTaint: true,
                 useCORS: true,
-                backgroundColor: null
-            }).then(canvas => {
-                canvas.toBlob(blob => {
-                    const link = document.createElement("a");
-                    link.download = "testimonial.png";
-                    link.href = URL.createObjectURL(blob);
-                    link.click();
-                    URL.revokeObjectURL(link.href);
-
-                    downloadBtn.disabled = false;
-                    downloadBtn.textContent = "Download Image";
-                }, "image/png");
-            }).catch(err => {
-                alert("Error generating image. Please try again.");
-                downloadBtn.disabled = false;
-                downloadBtn.textContent = "Download Image";
+                scale: 3, // higher res
+                scrollX: -window.scrollX,
+                scrollY: -window.scrollY,
             });
+
+            // Show download button again
+            downloadBtn.style.display = "inline-block";
+
+            // Create a download link
+            const link = document.createElement("a");
+            link.download = `PU_Testimonial_${nameDiv.textContent}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = "Download Image";
         });
 
+        // ========== Drag & Resize functionality for testimonialBox ==========
+
+        // Variables to store drag state
+        let isDragging = false;
+        let dragStartX, dragStartY;
+        let boxStartX, boxStartY;
+
+        testimonialBox.addEventListener("mousedown", function (e) {
+            // Prevent drag if resize handle is active (handled by CSS resize)
+            // But since we use native resize, no conflict expected.
+
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+
+            // get computed styles, then parse top/left px values
+            const style = window.getComputedStyle(testimonialBox);
+            boxStartX = parseFloat(style.left);
+            boxStartY = parseFloat(style.top);
+
+            // Bring box to front for better UX
+            testimonialBox.style.zIndex = "1000";
+
+            // Prevent text selection while dragging
+            document.body.style.userSelect = "none";
+        });
+
+        document.addEventListener("mousemove", function (e) {
+            if (!isDragging) return;
+
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+
+            // Calculate new position
+            let newLeft = boxStartX + dx;
+            let newTop = boxStartY + dy;
+
+            // Constrain within viewport (optional)
+            const boxRect = testimonialBox.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Limit left & top so box doesn't go out of screen (some margin 10px)
+            if (newLeft < 10) newLeft = 10;
+            if (newTop < 10) newTop = 10;
+            if (newLeft + boxRect.width > viewportWidth - 10) newLeft = viewportWidth - boxRect.width - 10;
+            if (newTop + boxRect.height > viewportHeight - 10) newTop = viewportHeight - boxRect.height - 10;
+
+            // Apply new position
+            testimonialBox.style.left = newLeft + "px";
+            testimonialBox.style.top = newTop + "px";
+        });
+
+        document.addEventListener("mouseup", function (e) {
+            if (isDragging) {
+                isDragging = false;
+                testimonialBox.style.zIndex = "auto";
+                document.body.style.userSelect = "auto";
+            }
+        });
+
+        // Touch events for mobile drag
+        testimonialBox.addEventListener("touchstart", function (e) {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                dragStartX = e.touches[0].clientX;
+                dragStartY = e.touches[0].clientY;
+
+                const style = window.getComputedStyle(testimonialBox);
+                boxStartX = parseFloat(style.left);
+                boxStartY = parseFloat(style.top);
+
+                testimonialBox.style.zIndex = "1000";
+                document.body.style.userSelect = "none";
+            }
+        });
+
+        document.addEventListener("touchmove", function (e) {
+            if (!isDragging) return;
+            if (e.touches.length !== 1) return;
+
+            const dx = e.touches[0].clientX - dragStartX;
+            const dy = e.touches[0].clientY - dragStartY;
+
+            const boxRect = testimonialBox.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            let newLeft = boxStartX + dx;
+            let newTop = boxStartY + dy;
+
+            if (newLeft < 10) newLeft = 10;
+            if (newTop < 10) newTop = 10;
+            if (newLeft + boxRect.width > viewportWidth - 10) newLeft = viewportWidth - boxRect.width - 10;
+            if (newTop + boxRect.height > viewportHeight - 10) newTop = viewportHeight - boxRect.height - 10;
+
+            testimonialBox.style.left = newLeft + "px";
+            testimonialBox.style.top = newTop + "px";
+
+            e.preventDefault(); // prevent scrolling while dragging
+        }, { passive: false });
+
+        document.addEventListener("touchend", function () {
+            if (isDragging) {
+                isDragging = false;
+                testimonialBox.style.zIndex = "auto";
+                document.body.style.userSelect = "auto";
+            }
+        });
     </script>
 </body>
 

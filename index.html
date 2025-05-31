@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PU Alumni Association - Testimonial Maker</title>
     <style>
+        /* Your original CSS unchanged */
         * {
             box-sizing: border-box;
         }
@@ -20,7 +21,6 @@
             color: #333;
         }
 
-
         /* Container for the upload form */
         #uploadPage {
             display: flex;
@@ -28,7 +28,8 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            padding: 100px 20px 40px; /* top padding for fixed header */
+            padding: 100px 20px 40px;
+            /* top padding for fixed header */
             gap: 25px;
             max-width: 400px;
             margin: 0 auto;
@@ -113,21 +114,25 @@
 
         /* Result page styling */
         #resultPage {
-            display: none;
-            height: 100vh;
-            width: 100vw;
-            position: relative;
-            background-size: cover;
-            background-position: center center;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding-right: 5%;
-            padding-left: 5vw;
-            padding-top: 15%;
-            overflow: hidden;
-            user-select: none;
-        }
+    display: none;  /* hidden initially */
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+    background-size: cover;
+    background-position: center center;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 5%;
+    padding-left: 5vw;
+    padding-top: 15%;
+    overflow: hidden;
+    user-select: none;
+}
+
+#resultPage.visible {
+    display: flex !important; /* show when visible */
+}
+
 
         #testimonialBox {
             min-width: 35%;
@@ -198,7 +203,8 @@
             background: #a30000;
             color: white;
             border-radius: 8px;
-            display: none; /* hidden initially */
+            display: none;
+            /* hidden initially */
             z-index: 1000;
             box-shadow: 0 5px 15px rgba(163, 0, 0, 0.5);
             transition: background-color 0.3s ease;
@@ -222,8 +228,44 @@
                 font-size: 1.1rem;
                 padding: 25px 20px;
             }
+        }
 
-            
+        /* === Minimal CSS added ONLY for logo and hashtag === */
+
+        /* Logo at top center in resultPage */
+        #logo {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 150px;
+            height: auto;
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Hashtag text bottom-right */
+        #hashtagText {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #000000;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            z-index: 10;
+        }
+
+        #hashtagText::before {
+            content: "#";
+            margin-right: 4px;
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #000000;
         }
     </style>
 
@@ -232,25 +274,34 @@
 </head>
 
 <body>
-       <div id="uploadPage" aria-label="Upload testimonial form">
+    <div id="uploadPage" aria-label="Upload testimonial form">
         <h2>Testimonial Maker</h2>
 
         <label for="nameInput">Name:</label>
         <input type="text" id="nameInput" placeholder="Your name" autocomplete="name" required aria-required="true" />
 
         <label for="branchInput">Branch:</label>
-        <input type="text" id="branchInput" placeholder="Your branch" autocomplete="organization" required aria-required="true" />
+        <input type="text" id="branchInput" placeholder="Your branch" autocomplete="organization" required
+            aria-required="true" />
 
         <label for="photoInput">Choose Photo:</label>
         <input type="file" id="photoInput" accept="image/*" required aria-required="true" />
 
         <label for="testimonialInput">Enter Testimonial:</label>
-        <textarea id="testimonialInput" placeholder="Write your testimonial here..." required aria-required="true"></textarea>
+        <textarea id="testimonialInput" placeholder="Write your testimonial here..." required
+            aria-required="true"></textarea>
+
+        <!-- New Hashtag Input -->
+        <label for="hashtagInput">Hashtag Text:</label>
+        <input type="text" id="hashtagInput" placeholder="#YourHashtag" autocomplete="off" aria-required="false" />
 
         <button id="generateBtn" aria-label="Generate testimonial image">Generate</button>
     </div>
 
     <div id="resultPage" aria-live="polite" aria-label="Generated testimonial result">
+        <!-- Logo at top center -->
+        <img id="logo" src="./logo.png" alt="Parul University Logo" />
+
         <div id="testimonialBox" tabindex="0" aria-label="Testimonial content box">
             <div id="testimonialText"></div>
             <div id="testimonialNameBranch">
@@ -258,10 +309,15 @@
                 <div class="branch"></div>
             </div>
         </div>
+
+        <!-- Hashtag text at bottom right -->
+        <div id="hashtagText"></div>
+
         <button id="downloadBtn" aria-label="Download testimonial image">Download Image</button>
     </div>
 
     <script>
+        // DOM Elements
         const photoInput = document.getElementById("photoInput");
         const testimonialInput = document.getElementById("testimonialInput");
         const generateBtn = document.getElementById("generateBtn");
@@ -270,14 +326,16 @@
         const testimonialTextDiv = document.getElementById("testimonialText");
         const nameDiv = document.querySelector("#testimonialNameBranch .name");
         const branchDiv = document.querySelector("#testimonialNameBranch .branch");
-
+        const downloadBtn = document.getElementById("downloadBtn");
+        const hashtagInput = document.getElementById("hashtagInput");
+        const hashtagTextDiv = document.getElementById("hashtagText");
         const nameInput = document.getElementById("nameInput");
         const branchInput = document.getElementById("branchInput");
-
-        const downloadBtn = document.getElementById("downloadBtn");
+        const logoImg = document.getElementById("logo");
 
         let photoDataURL = "";
 
+        // Load photo to DataURL for use in background
         photoInput.addEventListener("change", function () {
             const file = this.files[0];
             if (file) {
@@ -293,6 +351,7 @@
             const testimonialText = testimonialInput.value.trim();
             const nameText = nameInput.value.trim();
             const branchText = branchInput.value.trim();
+            const hashtagText = hashtagInput.value.trim();
 
             if (!nameText) {
                 alert("Please enter your name.");
@@ -323,43 +382,67 @@
                 return;
             }
 
-            // Hide upload page and show result page
-            uploadPage.style.display = "none";
-            resultPage.style.display = "flex";
-
-            // Show download button
-            downloadBtn.style.display = "inline-block";
-
-            // Set background image
-            resultPage.style.backgroundImage = `url('${photoDataURL}')`;
-
-            // Set testimonial text
-            testimonialTextDiv.textContent = testimonialText;
-
-            // Set name and branch separately
+            // Set testimonial texts
+            testimonialTextDiv.textContent = `"${testimonialText}"`;
             nameDiv.textContent = nameText;
             branchDiv.textContent = branchText;
 
-            // Focus testimonial box for accessibility
-            testimonialTextDiv.parentElement.focus();
+            // Set background with photo and overlay
+            resultPage.style.backgroundImage = ` url(${photoDataURL})`;
+
+            // Show hashtag or hide if empty
+            if (hashtagText) {
+                hashtagTextDiv.textContent = hashtagText;
+                hashtagTextDiv.style.display = "block";
+            } else {
+                hashtagTextDiv.style.display = "none";
+            }
+
+            // Show result page, hide upload page by toggling class
+            uploadPage.style.display = "none";
+            resultPage.classList.add("visible");
+
+            // Show download button
+            downloadBtn.style.display = "inline-block";
         });
 
         downloadBtn.addEventListener("click", function () {
-            html2canvas(resultPage, { useCORS: true, allowTaint: true }).then(canvas => {
-                const imgData = canvas.toDataURL("image/png");
-                const link = document.createElement("a");
-                link.href = imgData;
-                link.download = "testimonial.png";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = "Preparing...";
+
+            const clone = resultPage.cloneNode(true);
+
+            // Remove download button from clone
+            const cloneDownloadBtn = clone.querySelector("#downloadBtn");
+            if (cloneDownloadBtn) clone.removeChild(cloneDownloadBtn);
+
+            // Remove logo pointer-events for clean image
+            const cloneLogo = clone.querySelector("#logo");
+            if (cloneLogo) cloneLogo.style.pointerEvents = "none";
+
+            html2canvas(clone, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: null
+            }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const link = document.createElement("a");
+                    link.download = "testimonial.png";
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = "Download Image";
+                }, "image/png");
             }).catch(err => {
-                alert("Oops! Failed to generate image. Try again.");
-                console.error(err);
+                alert("Error generating image. Please try again.");
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = "Download Image";
             });
         });
-    </script>
 
+    </script>
 </body>
 
 </html>
